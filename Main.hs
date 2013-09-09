@@ -30,12 +30,14 @@ command :: AcidState LearntList -> TestState -> IO ()
 command db test = do putStrLn "+===================================================+"
                      putStrLn "|                                                   |"
                      putStrLn "| what to do next? (type: \"help\" for help screen)   |"
+                     putStrLn "| \"enter\" asks for the next vocabulary.             |"
                      putStrLn "|                                                   |"
-                     putStrLn "+===================================================+"
+                     putStrLn "+===================================================+\n"
                      cmd <- getLine
                      control db test cmd
 
 control :: AcidState LearntList -> TestState -> String -> IO ()
+control db test ""              = control db test "next"
 control db test "help"          = do print_help
                                      command db test
 
@@ -97,11 +99,16 @@ guess db test = do putStr $ "What is ("++show (test^.source)++"): "
                                      putStrLn "Correct, +3 Knowledge!"
                                      putStr "Full Answer: "
                                      putStrLn (vocab (test^.currentWord) (test^.target))
-                                     command db test
+                                     putStr "Translated Hint: "
+                                     putStrLn (hint (test^.currentWord) (test^.target))
+                                     test' <- execStateT (hinted.=False) test
+                                     command db test'
                              else do _ <- update db (UpdateKnowledge f (-2))
                                      putStrLn "Wrong, -2 Knowledge!"
                                      putStr "Correct Answer: "
                                      putStrLn (vocab (test^.currentWord) (test^.target))
+                                     putStr "Translated Hint: "
+                                     putStrLn (hint (test^.currentWord) (test^.target))
                                      test' <- execStateT (hinted.=False) test
                                      command db test'
                      else if is_correct
